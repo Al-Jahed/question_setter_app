@@ -40,9 +40,14 @@ def main():
     exam_codes = [f.replace(".docx", "") for f in files]
     st.sidebar.header("Search and Select Exam Code")
 
-    # Search box for exam codes
+    # Search box for exam codes with real-time suggestions
     search_code = st.sidebar.text_input("Enter Exam Code:")
-    matching_codes = [code for code in exam_codes if search_code.lower() in code.lower()]
+    
+    # Dynamically filter and display matching codes based on user input
+    if search_code:
+        matching_codes = [code for code in exam_codes if search_code.lower() in code.lower()]
+    else:
+        matching_codes = exam_codes
 
     if matching_codes:
         exam_code = st.selectbox("Select Exam Code", matching_codes)
@@ -84,7 +89,6 @@ def main():
                     file_name="combined_questions.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
-
     else:
         st.write("No matching exam codes found.")
 
