@@ -2,23 +2,18 @@ import streamlit as st
 from docx import Document
 import os
 import random
-import re
 
 # Path to the folder containing question papers
 QUESTION_PAPER_DIR = "./docs"
 
-# Function to parse the .docx file and get all the questions based on the provided format
+# Function to parse the .docx file and get all the questions
 def get_questions_from_docx(file_path):
     doc = Document(file_path)
-    content = "\n".join([para.text.strip() for para in doc.paragraphs if para.text.strip()])
-
-    # Define the pattern to match question blocks
-    question_pattern = r"\*\*\*(\d+)\.([^*]+)\*\*\*"
-    questions = re.findall(question_pattern, content)
-
-    # Each question is identified by its number and content after the ***
-    formatted_questions = [{"question_id": int(q[0]), "question": q[1].strip()} for q in questions]
-    return formatted_questions
+    questions = []
+    for para in doc.paragraphs:
+        if para.text.strip():  # Ignore empty paragraphs
+            questions.append(para.text.strip())
+    return questions
 
 # Load available question paper files from the docs folder
 def load_question_papers():
