@@ -45,22 +45,33 @@ def main():
     matching_codes = [code for code in exam_codes if search_code.lower() in code.lower()]
 
     if matching_codes:
-        exam_code = st.selectbox("Select Exam Code", matching_codes)
-        st.session_state.selected_code = exam_code
-        st.session_state.questions = get_questions_from_docx(f"{QUESTION_PAPER_DIR}/{exam_code}.docx")
         st.session_state.selected_questions = {}
 
-        st.write(f"Exam Code: {exam_code}")
-        st.write(f"Total Questions in the file: {len(st.session_state.questions)}")
+        # Step 2: Select multiple exam codes and questions
+        exam_codes_to_select = st.session_state.get('exam_codes_to_select', [])
+        
+        # Display the exam codes the user has selected to add
+        for selected_code in exam_codes_to_select:
+            st.write(f"Selected: {selected_code}")
+        
+        add_another = st.button("Add Another Exam Code")
+        
+        if add_another:
+            st.session_state.exam_codes_to_select.append(search_code)
+        
+        for exam_code in st.session_state.exam_codes_to_select:
+            st.write(f"Exam Code: {exam_code}")
+            st.session_state.questions = get_questions_from_docx(f"{QUESTION_PAPER_DIR}/{exam_code}.docx")
+            st.write(f"Total Questions in the file: {len(st.session_state.questions)}")
 
-        num_questions = st.number_input("How many questions to select?", min_value=1, max_value=len(st.session_state.questions), step=1)
+            num_questions = st.number_input(f"How many questions to select from {exam_code}?", min_value=1, max_value=len(st.session_state.questions), step=1)
 
-        if st.button("Add to Selection"):
-            selected = random.sample(st.session_state.questions, num_questions)
-            st.session_state.selected_questions[exam_code] = selected
-            st.write(f"Selected {num_questions} questions from {exam_code}")
+            if st.button(f"Add to Selection from {exam_code}"):
+                selected = random.sample(st.session_state.questions, num_questions)
+                st.session_state.selected_questions[exam_code] = selected
+                st.write(f"Selected {num_questions} questions from {exam_code}")
 
-        # Step 2: Show selected questions list
+        # Step 3: Show selected questions list
         st.subheader("Selected Questions")
         if st.session_state.selected_questions:
             for code, questions in st.session_state.selected_questions.items():
@@ -70,7 +81,7 @@ def main():
         else:
             st.write("No questions selected yet.")
 
-        # Step 3: Proceed button to generate combined document
+        # Step 4: Proceed button to generate combined document
         if st.button("Proceed to Generate"):
             if not st.session_state.selected_questions:
                 st.warning("Please select at least one set of questions.")
@@ -89,7 +100,7 @@ def main():
         st.write("No matching exam codes found.")
 
 if __name__ == "__main__":
-    if "selected_code" not in st.session_state:
-        st.session_state.selected_code = ""
+    if "exam_codes_to_select" not in st.session_state:
+        st.session_state.exam_codes_to_select = []
         st.session_state.selected_questions = {}
     main()
