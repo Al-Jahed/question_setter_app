@@ -38,74 +38,58 @@ def main():
     # Step 1: Display available exam codes (file names)
     files = load_question_papers()
     exam_codes = [f.replace(".docx", "") for f in files]
-
-    # Sidebar for search functionality
     st.sidebar.header("Search and Select Exam Code")
+
+    # Search box for exam codes
     search_code = st.sidebar.text_input("Enter Exam Code:")
-    
-    # Filter exam codes based on user input
-    if search_code:
-        matching_codes = [code for code in exam_codes if search_code.lower() in code.lower()]
-    else:
-        matching_codes = exam_codes
+    matching_codes = [code for code in exam_codes if search_code.lower() in code.lower()]
 
-    # Display the filtered matching exam codes
-    st.sidebar.subheader("Matching Exam Codes:")
-    for code in matching_codes:
-        st.sidebar.write(f"- {code}")
-
-    # Initialize session state if not already
-    if 'selected_questions' not in st.session_state:
+    if matching_codes:
+        exam_code = st.selectbox("Select Exam Code", matching_codes)
+        st.session_state.selected_code = exam_code
+        st.session_state.questions = get_questions_from_docx(f"{QUESTION_PAPER_DIR}/{exam_code}.docx")
         st.session_state.selected_questions = {}
-    if 'exam_codes_to_select' not in st.session_state:
-        st.session_state.exam_codes_to_select = []
 
-    # Step 2: Add selected exam code to the list
-    if search_code and st.sidebar.button("Add Exam Code"):
-        if search_code not in st.session_state.exam_codes_to_select:
-            st.session_state.exam_codes_to_select.append(search_code)
-            st.sidebar.write(f"{search_code} added to selection.")
-        else:
-            st.sidebar.write(f"{search_code} is already added.")
-    
-    # Step 3: Allow user to select number of questions from each added exam code
-    for exam_code in st.session_state.exam_codes_to_select:
         st.write(f"Exam Code: {exam_code}")
-        file_path = f"{QUESTION_PAPER_DIR}/{exam_code}.docx"
-        questions = get_questions_from_docx(file_path)
-        st.write(f"Total Questions in the file: {len(questions)}")
+        st.write(f"Total Questions in the file: {len(st.session_state.questions)}")
 
-        num_questions = st.number_input(f"How many questions to select from {exam_code}?", min_value=1, max_value=len(questions), step=1)
+        num_questions = st.number_input("How many questions to select?", min_value=1, max_value=len(st.session_state.questions), step=1)
 
-        if st.button(f"Add to Selection from {exam_code}"):
-            selected = random.sample(questions, num_questions)
+        if st.button("Add to Selection"):
+            selected = random.sample(st.session_state.questions, num_questions)
             st.session_state.selected_questions[exam_code] = selected
             st.write(f"Selected {num_questions} questions from {exam_code}")
 
-    # Step 4: Show selected questions list
-    st.subheader("Selected Questions")
-    if st.session_state.selected_questions:
-        for code, questions in st.session_state.selected_questions.items():
-            st.write(f"Questions from {code}:")
-            for idx, question in enumerate(questions, start=1):
-                st.write(f"{idx}. {question}")
-    else:
-        st.write("No questions selected yet.")
-
-    # Step 5: Proceed button to generate combined document
-    if st.button("Proceed to Generate"):
-        if not st.session_state.selected_questions:
-            st.warning("Please select at least one set of questions.")
+        # Step 2: Show selected questions list
+        st.subheader("Selected Questions")
+        if st.session_state.selected_questions:
+            for code, questions in st.session_state.selected_questions.items():
+                st.write(f"Questions from {code}:")
+                for idx, question in enumerate(questions, start=1):
+                    st.write(f"{idx}. {question}")
         else:
-            combined_doc_path = generate_combined_document(st.session_state.selected_questions)
-            st.write("Questions Combined Successfully!")
-            st.write(f"Download your combined document here:")
-            st.download_button(
-                label="Download Combined Questions",
-                data=open(combined_doc_path, "rb").read(),
-                file_name="combined_questions.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
+            st.write("No questions selected yet.")
+
+        # Step 3: Proceed button to generate combined document
+        if st.button("Proceed to Generate"):
+            if not st.session_state.selected_questions:
+                st.warning("Please select at least one set of questions.")
+            else:
+                combined_doc_path = generate_combined_document(st.session_state.selected_questions)
+                st.write("Questions Combined Successfully!")
+                st.write(f"Download your combined document here:")
+                st.download_button(
+                    label="Download Combined Questions",
+                    data=open(combined_doc_path, "rb").read(),
+                    file_name="combined_questions.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+
+    else:
+        st.write("No matching exam codes found.")
 
 if __name__ == "__main__":
+    if "selected_code" not in st.session_state:
+        st.session_state.selected_code = ""
+        st.session_state.selected_questions = {}
     main()
