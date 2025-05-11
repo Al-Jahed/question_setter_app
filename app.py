@@ -2,6 +2,7 @@ import streamlit as st
 from docx import Document
 import os
 import random
+import re
 
 # Path to the folder containing question papers
 QUESTION_PAPER_DIR = "./docs"
@@ -10,11 +11,13 @@ QUESTION_PAPER_DIR = "./docs"
 def get_questions_from_docx(file_path):
     try:
         doc = Document(file_path)
-        questions = []
-        for para in doc.paragraphs:
-            if para.text.strip():  # Ignore empty paragraphs
-                questions.append(para.text.strip())
-        return questions
+        full_text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+
+        # Regex pattern to match anything starting with ***<number> and ending with ".***" or " ***"
+        pattern = re.compile(r"\*{3}\d+.*?(?:\. \*{3}|\.{3}|\s\*{3})", re.DOTALL)
+        questions = pattern.findall(full_text)
+
+        return [q.strip() for q in questions]
     except Exception as e:
         st.error(f"Failed to read file {file_path}: {e}")
         return []
