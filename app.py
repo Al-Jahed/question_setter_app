@@ -13,11 +13,13 @@ def get_questions_from_docx(file_path):
         doc = Document(file_path)
         full_text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
 
-        # Regex pattern to match anything starting with ***<number> and ending with ".***" or " ***"
-        pattern = re.compile(r"\*{3}\d+.*?(?:\. \*{3}|\.{3}|\s\*{3})", re.DOTALL)
-        questions = pattern.findall(full_text)
+        # Pattern: Match ***<number><content>...(ends with .*** or  ***) — non-greedy match
+        pattern = re.compile(r"\*{3}(\d+.*?)\.(?:\s)?\*{3}", re.DOTALL)
 
-        return [q.strip() for q in questions]
+        # Extract and reconstruct cleaned questions
+        questions = [f"{match.strip()}." for match in pattern.findall(full_text)]
+
+        return questions
     except Exception as e:
         st.error(f"Failed to read file {file_path}: {e}")
         return []
